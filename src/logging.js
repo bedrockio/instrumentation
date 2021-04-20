@@ -27,7 +27,7 @@ function formatCurrentTrace({ traceId, spanId, traceFlags }) {
 /**
  * @returns {import('pino').Logger} Logger
  */
-function createLogger(options = {}, tracingEnabled) {
+function createLogger(options = {}, tracingEnabled, traceId) {
   const globalContext = tracingEnabled && getTracerContext();
   const globalContextFields = globalContext
     ? formatCurrentTrace(globalContext)
@@ -36,6 +36,7 @@ function createLogger(options = {}, tracingEnabled) {
   return parentLogger.child({
     ...globalContextFields,
     ...options,
+    customTraceId: traceId,
   });
 }
 
@@ -112,7 +113,11 @@ exports.loggingMiddleware = function loggingMiddleware(options = {}) {
     const { req, res } = ctx;
 
     const startTime = Date.now();
-    const requestLogger = createLogger({}, tracingEnabled);
+    const requestLogger = createLogger(
+      {},
+      tracingEnabled,
+      ctx.state.eventTraceId
+    );
 
     ctx.logger = requestLogger;
 
