@@ -26,11 +26,14 @@ class ConsoleLogger {
     return this._version;
   }
 
-  write(loggerFn, level, ...args) {
+  write(loggerFn, level, message, ...args) {
     if (levels.indexOf(this._level) > levels.indexOf(level)) {
       return;
     }
+    loggerFn(this.wrapMessage(message, level), ...args);
+  }
 
+  wrapMessage(message, level) {
     let levelStr = level.toUpperCase().padStart(5, " ");
     if (["warn"].includes(level)) {
       levelStr = klour.yellow(levelStr);
@@ -39,15 +42,15 @@ class ConsoleLogger {
     } else {
       levelStr = klour.gray(levelStr);
     }
-
-    loggerFn(
+    return [
       klour.gray(`[${getLocalDate()}]`),
       levelStr,
       ...Object.keys(this.props).map((key) => {
         return `${key}: ${this.props[key]}`;
       }),
-      ...args
-    );
+      message,
+    ].join(' ');
+
   }
 
   trace(...args) {
