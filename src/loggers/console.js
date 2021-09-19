@@ -26,14 +26,37 @@ class ConsoleLogger {
     return this._version;
   }
 
-  write(loggerFn, level, message, ...args) {
+  write(loggerFn, level, ...args) {
     if (levels.indexOf(this._level) > levels.indexOf(level)) {
       return;
     }
-    loggerFn(this.wrapMessage(message, level), ...args);
+    if (this.hasError(args)) {
+      // If the arguments contain an error object, send them directly
+      // to preserve the stack trace.
+      loggerFn(...this.getParts(level), ...args);
+    } else {
+      const [message, ...rest] = args;
+      // Otherwise wrap the message to allow for variable substitution.
+      loggerFn(this.wrapMessage(message, level), ...rest);
+    }
   }
 
+  hasError(args) {
+    return args.some((arg) => {
+      return arg instanceof Error;
+    });
+  }
+
+
   wrapMessage(message, level) {
+    return [
+      ...this.getParts(level),
+      message,
+    ].join(' ');
+  }
+
+
+  getParts(level) {
     let levelStr = level.toUpperCase().padStart(5, " ");
     if (["warn"].includes(level)) {
       levelStr = klour.yellow(levelStr);
@@ -48,8 +71,7 @@ class ConsoleLogger {
       ...Object.keys(this.props).map((key) => {
         return `${key}: ${this.props[key]}`;
       }),
-      message,
-    ].join(' ');
+    ];
 
   }
 
